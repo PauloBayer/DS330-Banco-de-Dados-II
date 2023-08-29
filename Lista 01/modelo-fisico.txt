@@ -1,0 +1,138 @@
+/* aluguel-carros-logico: */
+CREATE DATABASE aluguelCarros;
+USE aluguelCarros;
+
+/* criando tabelas */
+CREATE TABLE Pessoa (
+    nome VARCHAR(60),
+    cpfOuCnpj BIGINT PRIMARY KEY UNIQUE,
+    endereco VARCHAR(100),
+    telefone INTEGER,
+    email VARCHAR(60)
+);
+
+CREATE TABLE Cliente (
+    pessoaFisica BOOLEAN,
+    pessoaJuridica BOOLEAN,
+    temContratoAtivo BOOLEAN,
+    cpfOuCnpj BIGINT PRIMARY KEY UNIQUE
+);
+
+CREATE TABLE Funcionario (
+    cargo VARCHAR(30),
+    aindaFuncionario BOOLEAN,
+    cpf BIGINT PRIMARY KEY UNIQUE
+);
+
+CREATE TABLE Veiculo (
+    placa VARCHAR(7) PRIMARY KEY UNIQUE,
+    modelo VARCHAR(20),
+    cor VARCHAR(20),
+    ano INTEGER,
+    ultimoUso DATE,
+    quilometragem FLOAT,
+    valorDiaria FLOAT
+);
+
+CREATE TABLE Seguro (
+    id INTEGER PRIMARY KEY UNIQUE,
+    nomeSeguradora VARCHAR(30),
+    cnpjSeguradora VARCHAR(14),
+    coberturaMaxima FLOAT,
+    valorPremio FLOAT
+);
+
+CREATE TABLE Contrato (
+    idContrato INTEGER PRIMARY KEY UNIQUE,
+    fk_Cliente_cpfOuCnpj BIGINT,
+    nomeResponsavel VARCHAR(60),
+    fk_Pagamento_id INTEGER,
+    fk_Veiculo_placa VARCHAR(7),
+    fk_Seguro_id INTEGER,
+    estaAssinado BOOLEAN,
+    fk_Funcionario_cpf BIGINT,
+    diariasAluguel INTEGER
+);
+
+CREATE TABLE Pagamento (
+    id INTEGER PRIMARY KEY UNIQUE,
+    temMulta BOOLEAN,
+    parcelado BOOLEAN,
+    numTotalParcelas INTEGER,
+    valorTotal FLOAT,
+    formaPagamento VARCHAR(16)
+);
+
+CREATE TABLE ClientePagamento (
+    fk_Pagamento_id INTEGER,
+    id INTEGER PRIMARY KEY UNIQUE,
+    dataPagamento DATE,
+    numParcela INTEGER,
+    valorPgto FLOAT,
+    fk_Cliente_cpfOuCnpj BIGINT
+);
+ 
+ /* relacionamento entre Pessoa, Funcionario e Cliente */
+ALTER TABLE Cliente ADD CONSTRAINT FK_Cliente_2
+    FOREIGN KEY (cpfOuCnpj)
+    REFERENCES Pessoa(cpfOuCnpj);
+ 
+ALTER TABLE Funcionario ADD CONSTRAINT FK_Funcionario_3
+    FOREIGN KEY (cpf)
+    REFERENCES Pessoa(cpfOuCnpj);
+
+ /* relacionamento entre Pagamento, ClientePagamento e Cliente */
+ALTER TABLE Pagamento ADD CONSTRAINT FK_Pagamento_2
+    FOREIGN KEY (fk_Contrato_idContrato)
+    REFERENCES Contrato(idContrato)
+    ON DELETE RESTRICT;
+ 
+ALTER TABLE ClientePagamento ADD CONSTRAINT FK_ClientePagamento_2
+    FOREIGN KEY (fk_Pagamento_id)
+    REFERENCES Pagamento(id)
+    ON DELETE RESTRICT;
+ 
+ALTER TABLE ClientePagamento ADD CONSTRAINT FK_ClientePagamento_3
+    FOREIGN KEY (fk_Cliente_cpfOuCnpj)
+    REFERENCES Cliente(cpfOuCnpj);
+ 
+/* relacionamento entre Contrato e demais tabelas */
+ALTER TABLE Contrato ADD CONSTRAINT FK_Contrato_2
+    FOREIGN KEY (fk_Veiculo_placa)
+    REFERENCES Veiculo(placa)
+    ON DELETE CASCADE;
+ 
+ALTER TABLE Contrato ADD CONSTRAINT FK_Contrato_3
+    FOREIGN KEY (fk_Seguro_id)
+    REFERENCES Seguro (id)
+    ON DELETE CASCADE;
+
+ALTER TABLE Contrato ADD CONSTRAINT FK_Contrato_4
+	FOREIGN KEY (fk_Pagamento_id)
+    REFERENCES Pagamento(id)
+    ON DELETE CASCADE;
+
+ALTER TABLE Contrato ADD CONSTRAINT FK_Contrato_5
+	FOREIGN KEY (fk_Funcionario_cpf)
+    REFERENCES Funcionario(cpf)
+    ON DELETE CASCADE;
+
+ALTER TABLE Contrato ADD CONSTRAINT FK_Contrato_6
+	FOREIGN KEY (fk_Cliente_cpfOuCnpj)
+    REFERENCES Cliente(CpfOuCnpj)
+    ON DELETE CASCADE;
+
+/* Inserindo valores */
+INSERT INTO Pessoa VALUES ('Paulo', 11111111111, 'Rua 1', 99999999, 'paulo@gmail.com'), ('Michel', 22222222222, 'Rua 2', 88888888, 'michel@gmail.com');
+INSERT INTO Cliente VALUES (1, 0, 0, 11111111111);
+INSERT INTO Funcionario VALUES ('Vendedor', 1, 22222222222);
+INSERT INTO Veiculo VALUES ('AAA111A', 'Ford Ka', 'Prata', 2018, '2022-12-12', 50000.5, 98.5);
+INSERT INTO Seguro VALUES (1, 'Seguradora A', 33333333333333, 100000.0, 5000);
+INSERT INTO Pagamento VALUES (1, 0, 1, 2, 300.0, 'Crédito');
+INSERT INTO ClientePagamento VALUES (1, 1, '2023-08-08', 1, 50.0, 11111111111);
+INSERT INTO Contrato VALUES (1, 11111111111, 'Paulo', 1, 'AAA111A', 1, 0, 22222222222, 5);
+
+/* Listando valores */
+SELECT * FROM Pessoa, Cliente, Funcionario WHERE Pessoa.cpfOuCnpj = Cliente.cpfOuCnpj OR Pessoa.cpfOuCnpj = Funcionario.cpf;
+SELECT * FROM Pagamento, Cliente, ClientePagamento WHERE Pagamento.Id = ClientePagamento.fk_Pagamento_id AND ClientePagamento.fk_Cliente_cpfOuCnpj = Cliente.cpfOuCnpj;
+SELECT * FROM Contrato, Veiculo, Seguro WHERE Contrato.fk_Veiculo_placa = Veiculo.placa AND Contrato.fk_Seguro_id = Seguro.id;
